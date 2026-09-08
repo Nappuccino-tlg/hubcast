@@ -5,6 +5,7 @@ Fan-out to WebSocket subscribers across processes, on one Redis connection.
 [![CI](https://github.com/Nappuccino-tlg/hubcast/actions/workflows/ci.yml/badge.svg)](https://github.com/Nappuccino-tlg/hubcast/actions/workflows/ci.yml)
 ![Python](https://img.shields.io/badge/python-3.10%20--%203.13-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
+[![PyPI](https://img.shields.io/pypi/v/hubcast)](https://pypi.org/project/hubcast/)
 
 ```bash
 pip install "hubcast[redis]"
