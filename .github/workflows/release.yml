@@ -1,0 +1,54 @@
+name: Release
+
+# Publishing is a tag, not a button. Cutting v1.2.3 is the whole ceremony, and what ships
+# is what the tag points at rather than whatever happened to be on someone's laptop.
+on:
+  push:
+    tags: ["v*"]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - name: Build
+        run: |
+          pip install build twine
+          python -m build
+          twine check dist/*
+
+      - name: Refuse a tag that disagrees with the package
+        # A tag saying v0.1.0 on a package that calls itself 0.2.0 produces a release
+        # nobody can reason about afterwards, and it is silent unless something checks.
+        run: |
+          tagged="${GITHUB_REF_NAME#v}"
+          built=$(ls dist/*.tar.gz | sed -E 's/.*hubcast-(.*)\.tar\.gz/\1/')
+          echo "tag $tagged, package $built"
+          test "$tagged" = "$built"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      # The whole point: GitHub mints a short-lived token for this one run, PyPI verifies
+      # it came from this repository and this workflow, and no long-lived secret exists
+      # anywhere to be leaked, rotated, or pasted into the wrong window.
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v5
+        with:
+          name: dist
+          path: dist/
+
+      - uses: pypa/gh-action-pypi-publish@release/v1

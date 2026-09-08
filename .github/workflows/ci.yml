@@ -1,0 +1,62 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.13"]
+
+    services:
+      redis:
+        image: redis:7
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      TEST_REDIS_URL: redis://localhost:6379/15
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Install
+        run: pip install -e ".[dev]"
+
+      - name: Lint
+        run: |
+          ruff check .
+          ruff format --check .
+
+      - name: Test
+        run: pytest --cov-fail-under=100
+
+      - name: Import with no Redis installed
+        # redis is an optional extra, so the package must import and the in-process Hub
+        # must work without it. Easy to break and invisible to a suite that always has it.
+        run: |
+          pip uninstall -y redis
+          python -c "
+          import asyncio
+          from hubcast import Hub
+          async def main():
+              async with Hub() as hub, hub.subscribe('t') as messages:
+                  await hub.publish('t', 'local only')
+                  assert await anext(messages) == 'local only'
+          asyncio.run(main())
+          print('in-process hub works without redis installed')
+          "

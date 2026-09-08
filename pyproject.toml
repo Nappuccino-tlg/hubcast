@@ -1,0 +1,62 @@
+[project]
+name = "hubcast"
+version = "0.1.0"
+description = "Fan-out to WebSocket subscribers across processes, on one Redis connection."
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.10"
+authors = [{ name = "Parham Roozmand" }]
+keywords = ["websocket", "pubsub", "redis", "broadcast", "fanout", "asyncio", "realtime"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Framework :: AsyncIO",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Internet :: WWW/HTTP",
+]
+# Redis is optional: without one this is an in-process hub, which is a real use and the
+# one the tests exercise first.
+dependencies = []
+
+[project.optional-dependencies]
+redis = ["redis>=5.0"]
+dev = ["pytest>=8.3", "pytest-asyncio>=0.26", "pytest-cov>=6.0", "ruff>=0.8", "redis>=5.0"]
+
+[project.urls]
+Homepage = "https://github.com/Nappuccino-tlg/hubcast"
+Source = "https://github.com/Nappuccino-tlg/hubcast"
+Issues = "https://github.com/Nappuccino-tlg/hubcast/issues"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+testpaths = ["tests"]
+addopts = "-q --cov=hubcast --cov-report=term-missing"
+
+[tool.coverage.report]
+exclude_lines = ["pragma: no cover", "if TYPE_CHECKING:"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "UP", "B", "C4", "SIM", "RUF"]
+# N818 wants SubscriberTooSlowError. The short name is in the public API and
+# `except SubscriberTooSlow:` is the sentence a caller writes.
+ignore = ["N818"]
+
+[tool.ruff.lint.per-file-ignores]
+# SIM117: a Hub and the subscription taken inside it are two ideas, and nesting them says
+# which one owns the other. Flattening reads as though they were peers.
+"tests/*" = ["SIM117"]
