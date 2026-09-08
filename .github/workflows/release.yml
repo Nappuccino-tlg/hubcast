@@ -46,7 +46,7 @@ jobs:
       # anywhere to be leaked, rotated, or pasted into the wrong window.
       id-token: write
     steps:
-      - uses: actions/download-artifact@v5
+      - uses: actions/download-artifact@v8
         with:
           name: dist
           path: dist/
